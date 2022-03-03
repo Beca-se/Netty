@@ -15,12 +15,8 @@
  */
 package io.netty.channel.nio;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelOutboundBuffer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.RecvByteBufAllocator;
-import io.netty.channel.ServerChannel;
+import com.sun.istack.internal.Nullable;
+import io.netty.channel.*;
 
 import java.io.IOException;
 import java.net.PortUnreachableException;
@@ -37,8 +33,10 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
 
     /**
      * @see AbstractNioChannel#AbstractNioChannel(Channel, SelectableChannel, int)
+     * 第二个是Channel
+     * 第三个是要监听的事件
      */
-    protected AbstractNioMessageChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
+    protected AbstractNioMessageChannel(@Nullable Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent, ch, readInterestOp);
     }
 
@@ -88,7 +86,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 }
 
                 int size = readBuf.size();
-                for (int i = 0; i < size; i ++) {
+                for (int i = 0; i < size; i++) {
                     readPending = false;
                     pipeline.fireChannelRead(readBuf.get(i));
                 }
@@ -127,7 +125,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
         final SelectionKey key = selectionKey();
         final int interestOps = key.interestOps();
 
-        for (;;) {
+        for (; ; ) {
             Object msg = in.current();
             if (msg == null) {
                 // Wrote all messages.

@@ -16,16 +16,7 @@
 
 package io.netty.bootstrap;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.DefaultChannelPromise;
-import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ReflectiveChannelFactory;
+import io.netty.channel.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.GlobalEventExecutor;
@@ -50,12 +41,28 @@ import java.util.Map;
  */
 public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C extends Channel> implements Cloneable {
 
+    /**
+     * Boss组,如果是{@link ServerBootstrap}的话
+     */
     volatile EventLoopGroup group;
+    /**
+     * 用来构建channel的工厂
+     */
     @SuppressWarnings("deprecation")
     private volatile ChannelFactory<? extends C> channelFactory;
     private volatile SocketAddress localAddress;
+
+    /**
+     * Boss线程的参数集合
+     */
     private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>();
+    /**
+     * Boss线程的属性集合
+     */
     private final Map<AttributeKey<?>, Object> attrs = new LinkedHashMap<AttributeKey<?>, Object>();
+    /**
+     * Boss线程的handler
+     */
     private volatile ChannelHandler handler;
 
     AbstractBootstrap() {
@@ -125,7 +132,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * has a no-args constructor, its highly recommend to just use {@link #channel(Class)} to
      * simplify your code.
      */
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({"unchecked", "deprecation"})
     public B channelFactory(io.netty.channel.ChannelFactory<? extends C> channelFactory) {
         return channelFactory((ChannelFactory<C>) channelFactory);
     }
@@ -261,6 +268,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     /**
      * Create a new {@link Channel} and bind it.
+     * 绑定端口或者ip,端口
      */
     public ChannelFuture bind(SocketAddress localAddress) {
         validate();
@@ -303,10 +311,20 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
     }
 
+    /**
+     * 初始化并注册
+     *
+     * @return
+     */
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
+
+            /**
+             * 使用channel工厂获取channel,我们一般使用的是{@link io.netty.channel.socket.nio.NioServerSocketChannel}
+             */
             channel = channelFactory.newChannel();
+
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -318,7 +336,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
-
+        // 注册
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
@@ -340,6 +358,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         return regFuture;
     }
 
+    /**
+     * 初始化
+     */
     abstract void init(Channel channel) throws Exception;
 
     private static void doBind0(
@@ -424,23 +445,21 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         return copiedMap(attrs);
     }
 
-    static void setChannelOptions(
-            Channel channel, Map<ChannelOption<?>, Object> options, InternalLogger logger) {
-        for (Map.Entry<ChannelOption<?>, Object> e: options.entrySet()) {
+    static void setChannelOptions(Channel channel, Map<ChannelOption<?>, Object> options, InternalLogger logger) {
+        for (Map.Entry<ChannelOption<?>, Object> e : options.entrySet()) {
             setChannelOption(channel, e.getKey(), e.getValue(), logger);
         }
     }
 
     static void setChannelOptions(
             Channel channel, Map.Entry<ChannelOption<?>, Object>[] options, InternalLogger logger) {
-        for (Map.Entry<ChannelOption<?>, Object> e: options) {
+        for (Map.Entry<ChannelOption<?>, Object> e : options) {
             setChannelOption(channel, e.getKey(), e.getValue(), logger);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void setChannelOption(
-            Channel channel, ChannelOption<?> option, Object value, InternalLogger logger) {
+    private static void setChannelOption(Channel channel, ChannelOption<?> option, Object value, InternalLogger logger) {
         try {
             if (!channel.config().setOption((ChannelOption<Object>) option, value)) {
                 logger.warn("Unknown channel option '{}' for channel '{}'", option, channel);
@@ -454,8 +473,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder()
-            .append(StringUtil.simpleClassName(this))
-            .append('(').append(config()).append(')');
+                .append(StringUtil.simpleClassName(this))
+                .append('(').append(config()).append(')');
         return buf.toString();
     }
 

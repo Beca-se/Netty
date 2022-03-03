@@ -18,7 +18,15 @@ package io.netty.util.concurrent;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * 默认的执行器
+ *
+ * @author Zhou 15756874962@163.com
+ */
 public final class ThreadPerTaskExecutor implements Executor {
+    /**
+     * 线程工厂
+     */
     private final ThreadFactory threadFactory;
 
     public ThreadPerTaskExecutor(ThreadFactory threadFactory) {

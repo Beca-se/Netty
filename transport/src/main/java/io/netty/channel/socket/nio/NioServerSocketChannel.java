@@ -15,15 +15,16 @@
  */
 package io.netty.channel.socket.nio;
 
+import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelOutboundBuffer;
-import io.netty.util.internal.SocketUtils;
 import io.netty.channel.nio.AbstractNioMessageChannel;
 import io.netty.channel.socket.DefaultServerSocketChannelConfig;
 import io.netty.channel.socket.ServerSocketChannelConfig;
 import io.netty.util.internal.PlatformDependent;
+import io.netty.util.internal.SocketUtils;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
@@ -43,9 +44,10 @@ import java.util.Map;
  * NIO selector based implementation to accept new connections.
  */
 public class NioServerSocketChannel extends AbstractNioMessageChannel
-                             implements io.netty.channel.socket.ServerSocketChannel {
+        implements io.netty.channel.socket.ServerSocketChannel {
 
     private static final ChannelMetadata METADATA = new ChannelMetadata(false, 16);
+    // Nio的selectorProvider 可以用来创建 ServerSocketChannel 和 Selectot
     private static final SelectorProvider DEFAULT_SELECTOR_PROVIDER = SelectorProvider.provider();
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NioServerSocketChannel.class);
@@ -69,9 +71,18 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     /**
      * Create a new instance
+     * {@link AbstractBootstrap#initAndRegister() 中会反射调用此方法}
      */
     public NioServerSocketChannel() {
         this(newSocket(DEFAULT_SELECTOR_PROVIDER));
+    }
+
+    /**
+     * 核心之一
+     */
+    @Override
+    protected AbstractNioUnsafe newUnsafe() {
+        return super.newUnsafe();
     }
 
     /**
@@ -86,7 +97,8 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
      */
     public NioServerSocketChannel(ServerSocketChannel channel) {
         super(null, channel, SelectionKey.OP_ACCEPT);
-        config = new NioServerSocketChannelConfig(this, javaChannel().socket());
+        System.out.println(javaChannel() == channel);
+        config = new NioServerSocketChannelConfig(this, channel.socket());
     }
 
     @Override
